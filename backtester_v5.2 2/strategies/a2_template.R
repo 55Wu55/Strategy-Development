@@ -34,6 +34,14 @@ getOrders <- function(store, newRowList, currentPos, info, params) {
 
         # With these you can use getTMA, getPosSignFromTMA
         # and getPosSize to assign positions to the vector pos
+    for(i in 1:length(params$series)){
+      closePrices<-store$cl[[i]]
+      #get the close prices by store
+      posSign=getPosSignFromTMA(getTMA(as.xts(store$cl[[i]]),params$lookbacks))
+      currentClose<-closePrices[nrow(closePrices)]
+      #the last one is the close price
+      pos[[i]]=getPosSize(currentClose)*posSign
+      }
     }
 
     ################################################
@@ -68,35 +76,40 @@ getTMA <- function(close_prices, lookbacks) {
 
     # Replace TRUE to
     # check that lookbacks contains named elements short, medium and long
-    if (TRUE)
+    if (!all(c("long","short","medium") %in% names(lookbacks)))
         stop("E01: At least one of \"short\", \"medium\", \"long\" is missing from names(lookbacks)")
 
     # Replace TRUE to
     # check that the elements of lookbacks are all integers
-    if (TRUE)
-        stop("E02: At least one of the lookbacks is not an integer according to is.integer()")
+    if (!(class(lookbacks$short) == "integer" & class(lookbacks$medium) == "integer" & class(lookbacks$long) == "integer"))
+       # stop("E02: At least one of the lookbacks is not an integer according to is.integer()")
 
     # Replace TRUE to
     # check that lookbacks$short < lookbacks$medium < lookbacks$long
-    if (TRUE) 
+    if (!(lookbacks$short<lookbacks$medium) | !(lookbacks$medium < lookbacks$long))
         stop("E03: The lookbacks do not satisfy lookbacks$short < lookbacks$medium < lookbacks$long")
          
     # Replace TRUE to
     # check that close_prices is an xts
-    if (TRUE)
+    if (!("xts" %in% class(close_prices)))
         stop("E04: close_prices is not an xts according to is.xts()")
 
     # Replace TRUE to
     # check that close_prices has enough rows
-    if (TRUE)
+    if (nrow(close_prices)<20)
         stop("E05: close_prices does not enough rows")
 
     # Replace TRUE to
     # check that close_prices contains a column called "Close"
-    if (TRUE)
+    if (!("Close" %in% colnames(close_prices)))
         stop("E06: close_prices does not contain a column \"Close\"")
-
-    ret <- 0
+    
+    ret = list(short=0,medium=0,long=0)
+    for(i in 1:3){
+      n <- lookbacks[[i]]
+      temp = SMA(close_prices,n=n)
+      ret[i] = as.numeric(temp)[nrow(temp)]
+    }
 
     # You need to replace the assignment to ret so that the 
     # returned object:
@@ -129,7 +142,13 @@ getPosSignFromTMA <- function(tma_list) {
     #        1 if the short SMA < medium SMA < long SMA
     #       -1 if the short SMA > medium SMA > long SMA
     #        0 otherwise
-
+    if((tma_list[[1]] < tma_list[[2]]) & (tma_list[[2]] < tma_list[[3]]))
+      #if the short SMA < medium SMA < long SMA
+      return (1)
+    else if((tma_list[[1]] > tma_list[[2]]) & (tma_list[[2]] > tma_list[[3]]))
+      #if the short SMA > medium SMA > long SMA
+      return (-1)
+    else
     return(0)
 }
 
@@ -138,7 +157,8 @@ getPosSize <- function(current_close,constant=1000) {
     # by current_close) rounded down to the nearest 
     # integer, i.e., due the quotient and then take 
     # the floor.
-    return(0)
+    
+    return(floor(constant/current_close))
 }
 
 getInSampleResult <- function() {
@@ -150,7 +170,7 @@ getInSampleResult <- function() {
     # when the strategy is run on your 
     # username-specific in-sample period
     # DO NOT PUT THE ACTUAL CODE TO COMPUTE THIS RETURN VALUE HERE
-    return(0)
+    return(-943.4)
 }
 
 getInSampleOptResult <- function() {
@@ -160,7 +180,7 @@ getInSampleOptResult <- function() {
     # (see the Assignment 2 handout for details of those ranges)
     # and your username-specific in-sample period
     # DO NOT PUT THE ACTUAL CODE TO COMPUTE THIS RETURN VALUE HERE
-    return(0)
+    return(5.15)
 }
 
 ########################################################################

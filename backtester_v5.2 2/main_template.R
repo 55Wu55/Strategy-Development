@@ -12,8 +12,11 @@ cat("Sourcing",strategyFile,"\n")
 source(strategyFile) # load in getOrders
 
 # Strategy parameters 
-params <- list()
 
+dataList <- lapply(dataList, function(x)x[375:1077])
+series=1:length(dataList)
+lb <- list(short=as.integer(10),medium=as.integer(20),long=as.integer(30))
+params <- list(lookbacks=lb,sdParam=1.5,series=series)
 print("Parameters:")
 print(params)
 
